@@ -3,14 +3,23 @@
 #My first bash script
 
 #using hostname displays Fully-qulified domain name
-echo "FQDN : $(hostname -f)"
 
-#using hostnamectl displyas full information of host computer.
-echo -e "Host Information :\n $(hostnamectl)"
+hostname=$(hostname -f)
 
-#using hostname command with extantion I finding all the ip adress on the host computer
-echo -e "IP Addresses: \n $(hostname -I)"
+osname=$(hostnamectl | grep -A 0 'Operating System' |cut -d ':' -f 2 | cut -d ' ' -f 2)
 
-#using df commang with option h displaying the amount of spaceused by the root filesystem
+Version=$( hostnamectl | grep -A 0 'Kernel' |cut -d ':' -f 2 | cut -d ' ' -f 2,3 | cut -d '.' -f 1)
 
-echo -e "Root FileSystem Status: \n $(df -h /)"
+defaultIP=$(ip route | grep -A 0 'default' | cut -d ' ' -f 3)
+
+freespace=$(df -h / | awk 'NR==2 {print $4}')
+
+cat <<EOF
+Report for myvm
+===============
+FQDN: $hostname
+Operating System name and version: $osname/$Version
+IP Address: $defaultIP 
+Root Filesystem Free Space: $freespace
+===============
+EOF
