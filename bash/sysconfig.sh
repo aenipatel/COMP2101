@@ -36,11 +36,18 @@ EOF
 # This function will remove all the temp files created by the script
 # The temp files are all named similarly, "/tmp/somethinginfo.$$"
 
-#function cleanup {
+function cleanup()
+{
+  echo "Removing temporary files:"
+  sudo find /tmp -name "somethinginfo.$$" -type f -delete
+  exit
+  #find /tmp -name "somethinginfo.$$" -type f -delete
+}
 
-#}
+trap cleanup 2
 
 # A trap command is used after the function definition to specify this function is to be run if we get a ^C while running
+
 
 # End of section to be done for TASK
 # Remainder of script does not require any modification, but may need to be examined in order to create the functions for TASK
