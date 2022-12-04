@@ -2,20 +2,15 @@
 
 
 # 1) Get system hardware description
-Write-Host "======================================="
-Write-Host "System Hardware Description: " 
-Write-Host "======================================="
+function hardwareDesc {
+	$HardwareDescription = Get-WmiObject win32_computersystem
+	$HardwareDescription
+}
 
-$HardwareDescription = Get-WmiObject win32_computersystem
-$HardwareDescription
 
 # 2) Get operating system name and version number
-Write-Host "======================================="
-Write-Host "Operating System Name/Version: "
-Write-Host "======================================="
-
+function operatingSystem{
 $OS = Get-WmiObject -Class Win32_OperatingSystem
-
 if($OS){
     $OSName = $OS.Name
     $OSVersion = $OS.Version
@@ -27,12 +22,12 @@ else{
     Write-Host "Name	: Data Unavailable"
     Write-Host "Version	: Data Unavailable"
 }
+}
+
 
 # 3) Get processor description with speed, number of cores, and sizes of the L1, L2, and L3 caches if they are present
-Write-Host "======================================="
-Write-Host "Processor Description: "
-Write-Host "======================================="
 
+function processorDesc{
 $SystemInfo = Get-WmiObject -Class Win32_Processor 
 
 "Description	: $($SystemInfo.Name)"
@@ -56,16 +51,13 @@ if ($SystemInfo.L3CacheSize -ne $null){
     "L3CacheSize	: Data Unavailable"
 }
 
+}
 
 # 4) Get a summary of the RAM installed with the vendor, description, size, and bank and slot for each DIMM as a table
-Write-Host "======================================="
-Write-Host "RAM Details: "
-Write-Host "======================================="
 
+function ramInfo {
 $RAMInfo = Get-CimInstance win32_PhysicalMemory
-
 $Table = @()
-
 foreach ($item in $RAMInfo){
     $Object = New-Object -TypeName PSObject
     $Object | Add-Member -MemberType NoteProperty -Name Vendor -Value ($item.Manufacturer -replace '^\s*')
@@ -75,19 +67,15 @@ foreach ($item in $RAMInfo){
     $Object | Add-Member -MemberType NoteProperty -Name Slot -Value ($item.DeviceLocator -replace '^\s*')
     $Table += $Object
 }
-
 $Table | Format-Table -Auto
-
 $TotalRAM = ($RAMInfo | Measure-Object -Property Capacity -Sum).Sum/1GB
 Write-Host "Total RAM Installed: $TotalRAM GB"
-
+}
 
 
 # 5) Get disk information
-Write-Host "======================================="
-Write-Host "Disk Details: " Test
-Write-Host "======================================="
 
+function diskInfo {
 $diskdrives = Get-CIMInstance CIM_diskdrive
 $table = @()
 foreach ($disk in $diskdrives) {
@@ -105,24 +93,23 @@ foreach ($disk in $diskdrives) {
          }
     }
 }
-
 $table | Format-Table -Autosize
+}
 
 # 6) Get Ip configuration
-Write-Host "======================================="
-Write-Host "IP Configuration: "
-Write-Host "======================================="
+
+function ipConfiguration {
 
 get-ciminstance win32_networkadapterconfiguration | 
 Where IPEnabled -eq True |
 format-table -Auto Description, Index, IPAddress, IPSubnet, DNSDomain, DNSServerSearchOrder
 
+}
+
 
 # 7) Get Video Configuration
-Write-Host "======================================="
-Write-Host "Video Configuration: "
-Write-Host "======================================="
 
+function videoConfiguration {
 $videoController = Get-WmiObject -Class Win32_VideoController
 
 if($videoController) {
@@ -136,3 +123,47 @@ if($videoController) {
 } else {
     Write-Host "Data unavailable"
 }
+}
+
+
+Write-Host "======================================="
+Write-Host "System Hardware Description: " 
+Write-Host "======================================="
+
+hardwareDesc 
+
+Write-Host "======================================="
+Write-Host "Operating System Name/Version: "
+Write-Host "======================================="
+
+operatingSystem
+
+Write-Host "======================================="
+Write-Host "Processor Description: "
+Write-Host "======================================="
+
+processorDesc
+
+Write-Host "======================================="
+Write-Host "RAM Details: "
+Write-Host "======================================="
+
+ramInfo 
+
+Write-Host "======================================="
+Write-Host "Disk Details: " Test
+Write-Host "======================================="
+
+diskInfo 
+
+Write-Host "======================================="
+Write-Host "IP Configuration: "
+Write-Host "======================================="
+
+ipConfiguration 
+
+Write-Host "======================================="
+Write-Host "Video Configuration: "
+Write-Host "======================================="
+
+videoConfiguration 
