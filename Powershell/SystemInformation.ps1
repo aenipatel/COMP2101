@@ -1,169 +1,114 @@
 # system information powershell script
 
+param(
+[string] $type = ''
+)
 
-# 1) Get system hardware description
-function hardwareDesc {
-	$HardwareDescription = Get-WmiObject win32_computersystem
-	$HardwareDescription
-}
-
-
-# 2) Get operating system name and version number
-function operatingSystem{
-$OS = Get-WmiObject -Class Win32_OperatingSystem
-if($OS){
-    $OSName = $OS.Name
-    $OSVersion = $OS.Version
+if($type -eq ''){
+    Write-Host "======================================="
+    Write-Host "System Hardware Description: " 
+    Write-Host "======================================="
     
-    Write-Host "Name	: $OSName"
-    Write-Host "Version	: $OSVersion"
-}
-else{
-    Write-Host "Name	: Data Unavailable"
-    Write-Host "Version	: Data Unavailable"
-}
-}
+    hardwareDesc 
 
+    Write-Host "======================================="
+    Write-Host "Operating System Name/Version: "
+    Write-Host "======================================="
 
-# 3) Get processor description with speed, number of cores, and sizes of the L1, L2, and L3 caches if they are present
+    operatingSystem
 
-function processorDesc{
-$SystemInfo = Get-WmiObject -Class Win32_Processor 
+    Write-Host "======================================="
+    Write-Host "Processor Description: "
+    Write-Host "======================================="
 
-"Description	: $($SystemInfo.Name)"
-"Speed		: $($SystemInfo.MaxClockSpeed) MHz"
-"NumberOfCores	: $($SystemInfo.NumberOfCores)"
+    processorDesc
 
-if ($SystemInfo.L1CacheSize -ne $null){
-    "L1CacheSize	: $($SystemInfo.L1CacheSize) KB"
-}else {
-    "L1CacheSize	: Data Unavailable"
-}
-if ($SystemInfo.L2CacheSize -ne $null){
-    "L2CacheSize	: $($SystemInfo.L2CacheSize) KB"
-}else {
-    "L2CacheSize	: Data Unavailable"
-}
+    Write-Host "======================================="
+    Write-Host "RAM Details: "
+    Write-Host "======================================="
 
-if ($SystemInfo.L3CacheSize -ne $null){
-    "L3CacheSize	: $($SystemInfo.L3CacheSize) KB"
-}else {
-    "L3CacheSize	: Data Unavailable"
-}
+    ramInfo 
 
-}
+    Write-Host "======================================="
+    Write-Host "Disk Details: " Test
+    Write-Host "======================================="
 
-# 4) Get a summary of the RAM installed with the vendor, description, size, and bank and slot for each DIMM as a table
+    diskInfo 
 
-function ramInfo {
-$RAMInfo = Get-CimInstance win32_PhysicalMemory
-$Table = @()
-foreach ($item in $RAMInfo){
-    $Object = New-Object -TypeName PSObject
-    $Object | Add-Member -MemberType NoteProperty -Name Vendor -Value ($item.Manufacturer -replace '^\s*')
-    $Object | Add-Member -MemberType NoteProperty -Name Description -Value ($item.PartNumber -replace '^\s*')
-    $Object | Add-Member -MemberType NoteProperty -Name Size -Value ($item.Capacity/1GB)
-    $Object | Add-Member -MemberType NoteProperty -Name Bank -Value ($item.BankLabel -replace '^\s*')
-    $Object | Add-Member -MemberType NoteProperty -Name Slot -Value ($item.DeviceLocator -replace '^\s*')
-    $Table += $Object
-}
-$Table | Format-Table -Auto
-$TotalRAM = ($RAMInfo | Measure-Object -Property Capacity -Sum).Sum/1GB
-Write-Host "Total RAM Installed: $TotalRAM GB"
-}
+    Write-Host "======================================="
+    Write-Host "Network-Adapter Configuration: "
+    Write-Host "======================================="
 
+    ipConfiguration 
 
-# 5) Get disk information
+    Write-Host "======================================="
+    Write-Host "Video Configuration: "
+    Write-Host "======================================="
 
-function diskInfo {
-$diskdrives = Get-CIMInstance CIM_diskdrive
-$table = @()
-foreach ($disk in $diskdrives) {
-    $partitions = $disk|get-cimassociatedinstance -resultclassname CIM_diskpartition
-    foreach ($partition in $partitions) {
-          $logicaldisks = $partition|get-cimassociatedinstance -resultclassname CIM_logicaldisk
-          foreach ($logicaldisk in $logicaldisks) {
-                   $obj = new-object -typename psobject -property @{Vendor=$disk.Manufacturer
-                                                             Model=$disk.Model
-                                                             "freeSpace(GB)"=$logicaldisk.FreeSpace / 1gb -as [int]
-                                                             "Size(GB)"=$logicaldisk.size / 1gb -as [int]
-							     "percentFree(%)"=($logicalDisk.FreeSpace/$disk.Size)*100 -as [int]
-                                                             }
-	$table += $obj 
-         }
+    videoConfiguration 
     }
-}
-$table | Format-Table -Autosize
-}
+    else
+    {
+    if($type -eq 'System')
+        {
 
-# 6) Get Ip configuration
+        Write-Host "======================================="
+        Write-Host "System Hardware Description: " 
+        Write-Host "======================================="
 
-function ipConfiguration {
+        hardwareDesc 
 
-get-ciminstance win32_networkadapterconfiguration | 
-Where IPEnabled -eq True |
-format-table -Auto Description, Index, IPAddress, IPSubnet, DNSDomain, DNSServerSearchOrder
+        Write-Host "======================================="
+        Write-Host "Operating System Name/Version: "
+        Write-Host "======================================="
 
-}
+        operatingSystem
 
+        Write-Host "======================================="
+        Write-Host "Processor Description: "
+        Write-Host "======================================="
 
-# 7) Get Video Configuration
+        processorDesc
 
-function videoConfiguration {
-$videoController = Get-WmiObject -Class Win32_VideoController
+        Write-Host "======================================="
+        Write-Host "RAM Details: "
+        Write-Host "======================================="
 
-if($videoController) {
-    $vendor = $videoController.adaptercompatibility
-    $desc = $videoController.description
-    $resolution = $videoController.CurrentHorizontalResolution.ToString() + 'x' + $videoController.CurrentVerticalResolution.ToString()
-    "Vendor		: $vendor"
-    "Description	: $desc"
-    "Resolution	: $resolution"
+        ramInfo 
 
-} else {
-    Write-Host "Data unavailable"
-}
-}
+        Write-Host "======================================="
+        Write-Host "Video Configuration: "
+        Write-Host "======================================="
 
+        videoConfiguration 
 
-Write-Host "======================================="
-Write-Host "System Hardware Description: " 
-Write-Host "======================================="
+        }
+        else
+        {
+        if($type -eq 'Disks')
+            {
 
-hardwareDesc 
+            Write-Host "======================================="
+            Write-Host "Disk Details: " Test
+            Write-Host "======================================="
 
-Write-Host "======================================="
-Write-Host "Operating System Name/Version: "
-Write-Host "======================================="
+            diskInfo 
 
-operatingSystem
+            }
+            else
+            {
+            if($type -ieq 'Network')
+                {
+                Write-Host "======================================="
+                Write-Host "Network-Adapter Configuration: "
+                Write-Host "======================================="
 
-Write-Host "======================================="
-Write-Host "Processor Description: "
-Write-Host "======================================="
-
-processorDesc
-
-Write-Host "======================================="
-Write-Host "RAM Details: "
-Write-Host "======================================="
-
-ramInfo 
-
-Write-Host "======================================="
-Write-Host "Disk Details: " Test
-Write-Host "======================================="
-
-diskInfo 
-
-Write-Host "======================================="
-Write-Host "IP Configuration: "
-Write-Host "======================================="
-
-ipConfiguration 
-
-Write-Host "======================================="
-Write-Host "Video Configuration: "
-Write-Host "======================================="
-
-videoConfiguration 
+                ipConfiguration 
+                }
+                else
+                {
+                    Write-Host "invalid Option! please try again"
+                }
+            }
+        }
+    }
